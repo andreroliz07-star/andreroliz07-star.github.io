@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zona de Jogos</title>
+<meta name="description" content="Minijogos grátis para jogar no browser: reflexos, memória e adivinha o número.">
+<!--
+  ANÚNCIOS (Google AdSense) — quando a tua conta for aprovada:
+  1) Cola aqui o script que o AdSense te dá, por exemplo:
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  2) Substitui cada <div class="ad">...</div> pelo bloco de anúncio do AdSense.
+-->
+<style>
+  :root{--bg:#0f1020;--card:#1b1d36;--txt:#f1f2ff;--muted:#9a9cc4;--a:#7c5cff;--b:#22d3a6;--c:#ff5c8a}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  header{padding:28px 16px 12px;text-align:center}
+  h1{margin:0;font-size:2.2rem;letter-spacing:.5px}
+  h1 span{color:var(--b)}
+  header p{color:var(--muted);margin:6px 0 0}
+  nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:12px}
+  nav button{background:var(--card);color:var(--txt);border:1px solid #2c2f55;padding:10px 16px;border-radius:999px;cursor:pointer;font-size:1rem}
+  nav button.on{background:var(--a);border-color:var(--a)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px 40px;display:grid;grid-template-columns:1fr 300px;gap:20px}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr}.side{display:none}}
+  .ad{border:2px dashed #3a3d6b;border-radius:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.85rem;padding:10px}
+  .ad.top{max-width:1100px;height:90px;margin:0 auto 16px;width:calc(100% - 32px)}
+  .ad.tall{height:600px;position:sticky;top:16px}
+  .ad.mid{height:100px;margin-top:20px}
+  .game{background:var(--card);border-radius:16px;padding:24px;min-height:420px}
+  .game h2{margin:0 0 4px}
+  .game .sub{color:var(--muted);margin:0 0 20px}
+  .hidden{display:none}
+  .big{font-size:1.2rem}
+  .btn{background:var(--a);color:#fff;border:0;padding:12px 22px;border-radius:10px;font-size:1rem;cursor:pointer}
+  .btn:hover{filter:brightness(1.1)}
+  #reflexBox{height:260px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;cursor:pointer;user-select:none;background:#2c2f55;transition:background .1s}
+  #memGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:420px;margin:0 auto}
+  .cardm{aspect-ratio:1;border-radius:12px;background:#2c2f55;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer;user-select:none}
+  .cardm.open{background:#3b3f73}.cardm.done{background:var(--b);color:#0f1020}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input[type=number]{background:#11122a;color:var(--txt);border:1px solid #3a3d6b;border-radius:10px;padding:12px;font-size:1rem;width:140px}
+  .stats{color:var(--muted);margin-top:14px}
+  .msg{margin-top:16px;font-size:1.15rem;min-height:1.6em}
+  footer{text-align:center;color:var(--muted);font-size:.85rem;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Zona de <span>Jogos</span></h1>
+  <p>Minijogos grátis. Bate o teu recorde!</p>
+</header>
+
+<div class="ad top">Espaço para anúncio (728×90)</div>
+
+<nav>
+  <button data-g="reflex" class="on">⚡ Reflexos</button>
+  <button data-g="mem">🧠 Memória</button>
+  <button data-g="num">🔢 Adivinha o Número</button>
+</nav>
+
+<div class="wrap">
+  <main>
+    <!-- REFLEXOS -->
+    <section class="game" id="g-reflex">
+      <h2>⚡ Teste de Reflexos</h2>
+      <p class="sub">Clica no quadrado quando ficar verde. Quão rápido és?</p>
+      <div id="reflexBox">Clica para começar</div>
+      <div class="msg" id="reflexMsg"></div>
+      <div class="stats">Melhor tempo: <b id="reflexBest">—</b></div>
+    </section>
+
+    <!-- MEMÓRIA -->
+    <section class="game hidden" id="g-mem">
+      <h2>🧠 Jogo da Memória</h2>
+      <p class="sub">Encontra todos os pares com o menor número de jogadas.</p>
+      <div id="memGrid"></div>
+      <div class="row" style="justify-content:center;margin-top:16px">
+        <span>Jogadas: <b id="memMoves">0</b></span>
+        <button class="btn" id="memReset">Recomeçar</button>
+      </div>
+      <div class="msg" id="memMsg" style="text-align:center"></div>
+      <div class="stats" style="text-align:center">Recorde: <b id="memBest">—</b> jogadas</div>
+    </section>
+
+    <!-- ADIVINHA -->
+    <section class="game hidden" id="g-num">
+      <h2>🔢 Adivinha o Número</h2>
+      <p class="sub">Pensei num número entre 1 e 100. Consegues adivinhar?</p>
+      <form class="row" id="numForm">
+        <input type="number" id="numIn" min="1" max="100" placeholder="1 – 100" required>
+        <button class="btn">Tentar</button>
+        <button class="btn" type="button" id="numReset" style="background:#3a3d6b">Novo número</button>
+      </form>
+      <div class="msg big" id="numMsg"></div>
+      <div class="stats">Tentativas: <b id="numTries">0</b> · Recorde: <b id="numBest">—</b></div>
+    </section>
+
+    <div class="ad mid">Espaço para anúncio (responsivo)</div>
+  </main>
+
+  <aside class="side">
+    <div class="ad tall">Espaço para anúncio (300×600)</div>
+  </aside>
+</div>
+
+<footer>© Zona de Jogos · Feito para te divertires</footer>
+
+<script>
+// armazenamento seguro de recordes
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+// navegação
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.game').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('g-'+b.dataset.g).classList.remove('hidden');
+});
+
+// REFLEXOS
+(()=>{
+  const box=reflexBox,msg=reflexMsg,best=reflexBest;let state='idle',t0=0,timer;
+  let rec=+store.get('reflex')||0; if(rec)best.textContent=rec+' ms';
+  box.onclick=()=>{
+    if(state==='idle'||state==='done'){
+      state='wait';box.style.background='#c2410c';box.textContent='Espera pelo verde...';msg.textContent='';
+      timer=setTimeout(()=>{state='go';box.style.background='#16a34a';box.textContent='CLICA!';t0=performance.now()},1200+Math.random()*2500);
+    }else if(state==='wait'){
+      clearTimeout(timer);state='done';box.style.background='#2c2f55';box.textContent='Clica para tentar outra vez';msg.textContent='😅 Cedo demais!';
+    }else if(state==='go'){
+      const ms=Math.round(performance.now()-t0);state='done';box.style.background='#2c2f55';box.textContent='Clica para tentar outra vez';
+      msg.textContent=`⏱️ ${ms} ms `+(ms<250?'— Incrível!':ms<350?'— Muito bom!':'— Tenta outra vez!');
+      if(!rec||ms<rec){rec=ms;store.set('reflex',ms);best.textContent=ms+' ms';msg.textContent+=' 🏆 Novo recorde!'}
+    }
+  };
+})();
+
+// MEMÓRIA
+(()=>{
+  const icons=['🐉','⚡','🔥','💎','🚀','🌙','🎮','👑'];let first=null,lock=false,moves=0,found=0;
+  let rec=+store.get('mem')||0; if(rec)memBest.textContent=rec;
+  function start(){
+    memGrid.innerHTML='';first=null;lock=false;moves=0;found=0;memMoves.textContent=0;memMsg.textContent='';
+    [...icons,...icons].sort(()=>Math.random()-.5).forEach(ic=>{
+      const c=document.createElement('div');c.className='cardm';c.dataset.ic=ic;
+      c.onclick=()=>{
+        if(lock||c.classList.contains('open')||c.classList.contains('done'))return;
+        c.classList.add('open');c.textContent=ic;
+        if(!first){first=c;return}
+        moves++;memMoves.textContent=moves;
+        if(first.dataset.ic===ic){first.classList.add('done');c.classList.add('done');first=null;found++;
+          if(found===icons.length){memMsg.textContent=`🎉 Conseguiste em ${moves} jogadas!`;
+            if(!rec||moves<rec){rec=moves;store.set('mem',moves);memBest.textContent=moves;memMsg.textContent+=' 🏆 Novo recorde!'}}
+        }else{lock=true;const a=first;first=null;setTimeout(()=>{a.classList.remove('open');c.classList.remove('open');a.textContent='';c.textContent='';lock=false},700)}
+      };
+      memGrid.appendChild(c);
+    });
+  }
+  memReset.onclick=start;start();
+})();
+
+// ADIVINHA O NÚMERO
+(()=>{
+  let target,tries;let rec=+store.get('num')||0; if(rec)numBest.textContent=rec;
+  function start(){target=1+Math.floor(Math.random()*100);tries=0;numTries.textContent=0;numMsg.textContent='';numIn.value=''}
+  numForm.onsubmit=e=>{
+    e.preventDefault();const v=+numIn.value;if(!v||v<1||v>100)return;
+    tries++;numTries.textContent=tries;
+    if(v<target)numMsg.textContent='⬆️ É maior!';
+    else if(v>target)numMsg.textContent='⬇️ É menor!';
+    else{numMsg.textContent=`🎉 Acertaste! Era ${target}, em ${tries} tentativas.`;
+      if(!rec||tries<rec){rec=tries;store.set('num',tries);numBest.textContent=tries;numMsg.textContent+=' 🏆 Recorde!'}}
+    numIn.value='';numIn.focus();
+  };
+  numReset.onclick=start;start();
+})();
+</script>
+</body>
+</html>
