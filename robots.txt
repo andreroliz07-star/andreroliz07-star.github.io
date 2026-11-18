@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://andreroliz07-star.github.io/sitemap.xml
